@@ -44,7 +44,7 @@ mods/
 
 ### 3. 校验
 
-在项目根目录（`开发目录`）运行：
+在项目根目录（就是本仓库的根文件夹）运行：
 
 ```powershell
 node mods/tools/build-mods.mjs            # 看看扫描到了什么

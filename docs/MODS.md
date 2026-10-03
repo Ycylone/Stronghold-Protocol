@@ -47,7 +47,7 @@
 ## 3. 目录结构
 
 ```
-开发目录/                          ← git 仓库根
+E:\new\Stronghold-Protocol - 副本\   ← git 仓库根（这个文件夹本身就是开发目录）
 ├── mods/                          ← ★ MOD 层（本分支新增，上游没有这个目录）
 │   ├── README.md                  ← MOD 作者速查
 │   ├── tools/
@@ -160,7 +160,7 @@ this._safe(() => installContent(this, { mode: this.contentMode, extra: opts.extr
 ## 7. 上游更新后的标准流程
 
 ```powershell
-cd "E:\new\Stronghold-Protocol - 副本\开发目录"
+cd "E:\new\Stronghold-Protocol - 副本"
 
 git switch master
 git pull upstream master        # 或去 GitHub 网页点 "Sync fork"
