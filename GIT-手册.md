@@ -7,23 +7,32 @@
 ## 一、目录结构：你只有一个地方要记
 
 ```
-E:\new\Stronghold-Protocol - 副本\        ← 总文件夹（名字别改）
-  ├── 原有的整合包\                        ← 从 Release 解压的原始整合包（只读参考，不要在这改代码）
-  └── 开发目录\                            ← ★ 你的 git 仓库，以后所有工作都在这里
-        ├── .git\                          ← git 的大脑，别手动碰
-        ├── server\ shared\ public\ ...    ← 项目源码（git 管理）
-        ├── public\assets\                 ← 游戏素材 313MB（.gitignore 排除，不提交）
-        ├── node_modules\                  ← 依赖（.gitignore 排除，不提交）
-        └── GIT-手册.md                     ← 本文件
+E:\new\Stronghold-Protocol - 副本\        ← ★ 这里就是你的 git 仓库根目录
+  ├── .git\                          ← git 的大脑，别手动碰
+  ├── server\ shared\ public\ ...    ← 项目源码（git 管理）
+  ├── mods\                          ← ★ MOD 层（我们加的，上游没有）
+  ├── docs\MODS.md                   ← MOD 系统架构契约
+  ├── test\modkit-compat.test.js     ← 兼容性守卫
+  ├── public\assets\                 ← 游戏素材 313MB（.gitignore 排除，不提交）
+  ├── node_modules\                  ← 依赖（.gitignore 排除，不提交）
+  └── GIT-手册.md                     ← 本文件
 ```
 
-**记住一句话：以后干活去 `开发目录`。**
+**记住一句话：以后干活就在 `E:\new\Stronghold-Protocol - 副本` 这一个文件夹里。**
 
 用命令行时先进去：
 
 ```powershell
-cd "E:\new\Stronghold-Protocol - 副本\开发目录"
+cd "E:\new\Stronghold-Protocol - 副本"
 ```
+
+> **关于整合包**：以前这里还有一个「原有的整合包」文件夹，现已删除。
+> 如果你想玩作者发布的 0.1.1 整合包，去 [Releases 页面](https://github.com/sganggs/Stronghold-Protocol/releases) 重新下载即可，
+> 和这个开发仓库互不影响。
+
+> **关于另外两个文件夹**（都在 `E:\new` 下，和本仓库无关）：
+> - `Stronghold-Protocol\` —— 你在打包 APK 用的，我全程没碰
+> - `Stronghold-Protocol - 副本 - 副本\` —— 已删除（与本源码逐字节相同的重复备份）
 
 ---
 
@@ -35,8 +44,8 @@ cd "E:\new\Stronghold-Protocol - 副本\开发目录"
 
 ```
                          ┌── origin    →  https://github.com/Ycylone/Stronghold-Protocol
-你的开发目录（本地）───┤                （你自己的 fork，用来存放和备份你的成果）
-                         └── upstream  →  https://github.com/sganggs/Stronghold-Protocol
+你的本地仓库 ──────────┤                （你自己的 fork，用来存放和备份你的成果）
+（就是本文件夹）           └── upstream  →  https://github.com/sganggs/Stronghold-Protocol
                                           （原作者的仓库，用来接收官方更新）
 ```
 
