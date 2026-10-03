@@ -224,3 +224,14 @@ export const emoteArtGroup = (id) => { const e = emoteInfo(id); return e ? `emot
 export const emoteArtPath = (id) => { const e = emoteInfo(id); return e ? `/assets/local/emoticon/${e.dir}/${e.picId}.png` : null; };
 export const EMOTE_COOLDOWN_MS = 1000; // activity_table autoChessData.constData.chatCD (s)
 export const EMOTE_BUBBLE_MS = 3000;   // constData.chatTime (s): how long a bubble stays up
+
+// ---- modkit fork -----------------------------------------------------------------------------------------------
+/**
+ * This tree is the **modkit fork** of Stronghold-Protocol: upstream's code plus a community-MOD loading layer.
+ * The mod layer lives entirely under `mods/` (see docs/MODS.md) and is designed to touch upstream files as little as
+ * possible; this constant is the fork's own identity marker and its diff anchor.
+ *
+ * Deliberately independent of `APP_VERSION` (which mirrors package.json and upstream's release): a fork is not a
+ * release. test/modkit-compat.test.js reads this marker to tell a modkit tree from a plain upstream checkout.
+ */
+export const MODKIT_FORK = true;

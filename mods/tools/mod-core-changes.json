@@ -1,0 +1,162 @@
+{
+  "$comment": [
+    "核心改动清单 —— modkit 分支对「上游原文件」的全部改动记录。",
+    "",
+    "这份文件由 test/modkit-compat.test.js 自动校验：清单里记的行号/内容如果和实际文件对不上，测试就会失败。",
+    "它的用途是：上游更新后（git merge master），如果这些位置发生了冲突或漂移，测试会立刻告诉你，",
+    "而不是等到 MOD 功能悄悄坏掉才发现。",
+    "",
+    "规矩：只记录「修改了上游已有文件」的改动。新增文件（如 mods/ 下的东西）不需要记在这里，",
+    "因为它们永远不会和上游冲突。"
+  ],
+
+  "modApiVersion": 1,
+  "upstreamBaseline": "8b10625d3ccedcdc88466771a996c288d915467d",
+  "upstreamBranch": "master",
+  "recordedAt": "2026-10-04",
+
+  "markerFile": {
+    "path": "shared/constants.js",
+    "mustContain": "MODKIT_FORK",
+    "why": "让代码本身能识别「这是一份 modkit 分支」，而不是靠目录名判断。上游若改动此文件，冲突时保留这一行即可。"
+  },
+
+  "coreChanges": [
+    {
+      "id": "MODKIT_FORK-marker",
+      "status": "applied",
+      "appliedAt": "2026-10-04",
+      "file": "shared/constants.js",
+      "where": "文件末尾（EMOTE_BUBBLE_MS 之后）",
+      "appliedAtLine": 228,
+      "upstreamAnchor": "export const EMOTE_BUBBLE_MS = 3000;",
+      "adds": [
+        "// ---- modkit fork ----",
+        "export const MODKIT_FORK = true;"
+      ],
+      "reason": "MOD 加载器需要一个自身标识；同时作为「与上游的差异锚点」，方便合并时定位。",
+      "reapply": "找到 `export const EMOTE_BUBBLE_MS` 那一行，在其后追加上述注释块与 export（完整文本见本次提交的 diff）。",
+      "conflictRisk": "低。上游极少改动文件末尾；即便改动，也只需在合并后重新追加这几行。"
+    }
+  ],
+
+  "plannedChanges": [
+    {
+      "id": "P1-load-mods-on-boot",
+      "status": "not-applied",
+      "phase": "P1",
+      "targetFile": "server/index.js",
+      "purpose": "服务器启动时加载 mods/ 目录里的 MOD。",
+      "preferredApproach": "新增 server/modkit/index.js，由 server/index.js 的 startServer() 内部调用一次。",
+      "note": "优先寻找最小侵入点；若 startServer 结构变化，改在 Lobby/Match 构造前调用即可。"
+    },
+    {
+      "id": "P1-register-mod-meta",
+      "status": "not-applied",
+      "phase": "P1",
+      "targetFile": "server/match/effectsMeta.js",
+      "upstreamAnchor": "createRegistry() 内 `registerAllMeta(reg)` 调用之后",
+      "purpose": "让 MOD 能注册休整期效果（新盟约 / 新装备 / 新策略 / 全局钩子）。",
+      "preferredApproach": "在 registerAllMeta(reg) 之后追加一行 registerModMeta(reg)（从 server/modkit/ 导入）。",
+      "note": "MetaRegistry 的 key 前缀被 KEY_RE 固定为 garrison/band/bond/item/choice/effect/global 这 7 个，MOD 【不能】用 `mod:` 前缀（会被 register() 抛 TypeError）。MOD 采用「固定前缀 + modId 后缀」命名，例如 `global:<modId>_<name>`、`bond:<modId>_<bondId>`，与上游按 bondId/itemKey 命名空间的做法一致。"
+    },
+    {
+      "id": "P1-inject-battle-content",
+      "status": "not-applied",
+      "phase": "P1",
+      "targetFile": "server/match/Match.js",
+      "upstreamAnchor": "构造 Battle 并传 opts 的位置（搜索 `extraContent`）",
+      "purpose": "把 MOD 的内容模块与干员技能表传给每一场 Battle。",
+      "preferredApproach": "在 Battle 的 opts 里追加 `extraContent: modExtraContent()` 与 `kits: modKits()`（两者都是已有参数，引擎无需改动）。",
+      "note": "Battle.js 第 172 行已经是 `extra: opts.extraContent`，所以这一侧零改动。"
+    }
+  ],
+
+  "stableSurfaces": [
+    {
+      "id": "battle-hook-bus",
+      "what": "战斗事件钩子总线",
+      "file": "server/sim/Battle.js",
+      "dependsOn": ["on(", "off("],
+      "documentedAt": "docs/DESIGN.md §5.4",
+      "events": [
+        "battleStart", "deploy", "tick", "beforeAttack", "attack", "hit", "damaged", "heal",
+        "fatal", "kill", "death", "skillStart", "skillEnd", "ammoUsed", "spGain",
+        "statusApplied", "blocked", "enemySpawn", "enemyLeak", "battleEnd"
+      ],
+      "why": "DESIGN 明写这是「the only way content plugs in」——官方内容全部走它，所以它比引擎内部稳定得多。"
+    },
+    {
+      "id": "battle-extra-content",
+      "what": "外部内容模块注入点",
+      "file": "server/sim/Battle.js",
+      "dependsOn": ["extraContent"],
+      "documentedAt": "docs/DESIGN.md §7",
+      "why": "`installContent(battle, { extra })` 的 extra 数组，引擎已实现，MOD 不需要改引擎。"
+    },
+    {
+      "id": "kit-injection",
+      "what": "干员技能表注入点",
+      "file": "server/sim/content/index.js",
+      "dependsOn": ["opts.kits"],
+      "why": "`battle.opts.kits` 已设计成「优先于官方技能表」，加新干员/覆盖技能不用改引擎。"
+    },
+    {
+      "id": "content-install",
+      "what": "内容安装函数",
+      "file": "server/sim/content/index.js",
+      "dependsOn": ["installContent", "registerAllMeta", "setupUnitKit", "selectSkillSpec", "syncUnitLoadout", "skillSpecSource", "KITS", "MODULES"],
+      "why": "MOD 加载器的接入点；导出名变化会被兼容性测试立刻捕获。"
+    },
+    {
+      "id": "meta-registry",
+      "what": "休整期效果注册表",
+      "file": "server/match/effectsMeta.js",
+      "dependsOn": ["MetaRegistry", "createRegistry", "HOOKS", "getDefaultRegistry"],
+      "documentedAt": "docs/META.md",
+      "hooks": [
+        "onRoundStart", "onIncome", "onPrepStart", "onPrepEnd", "onGain", "onSold", "onRefresh",
+        "onPrice", "onBuy", "onSpend", "onMerge", "onLevelUp", "onBattleStart", "onBattleResult",
+        "onChoicePick", "onEquip", "onArt", "onDestroy", "onLayers"
+      ],
+      "why": "MOD 注册新盟约/装备/策略/机变卡的正式入口。"
+    },
+    {
+      "id": "game-data-view",
+      "what": "对局侧数据视图",
+      "file": "server/match/gamedata.js",
+      "dependsOn": ["GameData"],
+      "note": "该类自带 DEFAULTS 兜底，缺字段不崩——对 MOD 注入部分数据很友好。",
+      "why": "MOD 新模式/新关卡依赖它的读写方式。"
+    },
+    {
+      "id": "data-loading",
+      "what": "数据加载与索引",
+      "file": "server/data.js",
+      "dependsOn": ["loadData", "getData", "resetData", "lookup", "deepFreeze", "getChess", "getBond", "getGarrison", "getItem", "getBand", "getEffect", "getEnemy", "getWave", "getStage", "getBoss", "getToken", "getConfig", "getMode", "DATA_FILES"],
+      "note": "loadData 会读取目录下所有 *.json；deepFreeze 让数据不可变，所以 MOD 数据合并必须发生在冻结之前。",
+      "why": "P1 的数据注入就建立在这套机制上。"
+    },
+    {
+      "id": "tuning-overlay",
+      "what": "已有的「数据覆盖层」先例",
+      "file": "server/match/gamedata.js",
+      "dependsOn": ["tuning"],
+      "why": "作者自己已经写了「读 data/tuning.json 覆盖内建 config」的模式（目前只覆盖 titles）。MOD 数据合并是把它一般化，方向与上游一致。"
+    },
+    {
+      "id": "sim-served-to-browser",
+      "what": "客户端战斗：sim 目录经 HTTP 下发给浏览器",
+      "file": "server/index.js",
+      "dependsOn": ["SIM_PRIVATE", "DATA_SHIM_JS"],
+      "documentedAt": "docs/DESIGN.md §14",
+      "why": "战斗在浏览器里跑，所以 MOD 的战斗代码必须同时能被服务器和浏览器加载。任何 MOD API 都必须环境无关。",
+      "guardedBy": "test/match/simServe.test.js"
+    }
+  ],
+
+  "invariants": {
+    "maxCoreChanges": 5,
+    "note": "coreChanges 的长度不得超过这个数。这不是形式主义：核心改动越少，上游更新时的合并成本越低。超了就说明方案该重新设计。"
+  }
+}

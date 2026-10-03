@@ -1,0 +1,14 @@
+# mods/ 自己的忽略规则。
+#
+# 注意：这里【不】忽略 MOD 目录本身——MOD 是内容，应该跟仓库一起走。
+# 只忽略工具生成的东西，以及 MOD 作者本地的杂物。
+
+# mods/tools/build-mods.mjs --write 生成的索引（运行时会重新生成）
+.mods-index.json
+
+# MOD 作者本地的杂物
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
