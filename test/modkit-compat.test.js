@@ -52,10 +52,11 @@ test('every recorded core change is present in the tree exactly as documented', 
   assert.ok(src.includes(gitState.markerFile.mustContain), `the fork marker ${gitState.markerFile.mustContain} is present`);
 });
 
-test('the diff against upstream stays small: no unrecorded file is modified', () => {
-  // A fork dies from a diff it can no longer rebase. This is the ratchet: every upstream file the mod layer modifies
-  // must be listed in mod-core-changes.json with a reason and a reapply recipe, and the list may not grow past the
-  // documented ceiling without someone deliberately raising it here.
+test('the core-change ledger is well formed and under its ceiling', () => {
+  // NOTE: this test is deliberately git-free — it runs in release bundles and CI checkouts that have no history. It
+  // checks that the LEDGER is honest and within budget, not that the ledger matches the actual diff. The real
+  // diff-vs-upstream check is `node mods/tools/check-upstream-diff.mjs`, which needs git and is run by hand before a
+  // merge (see 交接/PROGRESS.md §7).
   const recorded = new Set(gitState.coreChanges.map((c) => c.file));
   const planned = new Set(gitState.plannedChanges.map((c) => c.targetFile));
   assert.ok(
@@ -196,4 +197,49 @@ test('the mod layer\'s own files are present and self-describing', () => {
   assert.match(read('docs/MODS.md'), /核心改动/, 'docs/MODS.md documents the core-change ledger');
   assert.match(read('docs/MODS.md'), /MODKIT_FORK|modkit/, 'docs/MODS.md names the fork');
   assert.match(read('mods/tools/build-mods.mjs'), /mods/i, 'the mod build tool exists');
+});
+
+test('the cross-session handover files exist and still carry their key sections', () => {
+  // This project is built by a user who does not write code by hand, through a Vibe Coding tool whose conversation
+  // context cannot hold the whole project. The handover/ files ARE the project's long-term memory — the chat log is
+  // not. Losing or gutting them would silently strand the next session, so they are guarded like any other contract.
+  const progress = read('交接/PROGRESS.md');
+  const decisions = read('交接/DECISIONS.md');
+  const prompts = read('交接/SESSION-PROMPT.md');
+
+  // PROGRESS.md: the single source of truth for "where are we".
+  assert.match(progress, /唯一权威/, 'PROGRESS.md declares itself the authoritative state');
+  assert.match(progress, /新对话从这里开始/, 'PROGRESS.md carries the paste-ready bootstrap block');
+  for (const phase of ['P0', 'P1', 'P2', 'P3', 'P4', 'P5']) {
+    assert.ok(progress.includes(phase), `PROGRESS.md still tracks ${phase}`);
+  }
+  // The bootstrap block exists in TWO places (PROGRESS.md and SESSION-PROMPT.md) because they serve different readers:
+  // PROGRESS.md is read by an AI that already opened the repo, SESSION-PROMPT.md is the human's copy-paste sheet.
+  // Two copies of the same prompt WILL drift; this makes the drift a red test instead of a silent trap where the
+  // user pastes a prompt that points at a file list nobody maintains any more.
+  const bootstrap = (text) => {
+    const at = text.indexOf('这是一个 MOD 系统开发项目');
+    assert.ok(at >= 0, 'the bootstrap prompt is present');
+    return text.slice(at, text.indexOf('```', at)).replace(/\s+/g, ' ').trim();
+  };
+  assert.equal(bootstrap(progress), bootstrap(prompts), 'PROGRESS.md and SESSION-PROMPT.md carry the same bootstrap prompt');
+  for (const f of ['交接/PROGRESS.md', '交接/DECISIONS.md', 'docs/MODS.md', 'GIT-手册.md']) {
+    assert.ok(progress.includes(f), `the bootstrap block points at ${f}`);
+    assert.ok(prompts.includes(f), `the SESSION-PROMPT bootstrap block points at ${f}`);
+  }
+
+  // DECISIONS.md: the "why", so later sessions stop re-proposing rejected designs.
+  for (const id of ['D1', 'D3', 'D6', 'D8', 'D10']) {
+    assert.ok(new RegExp(`^## ${id}\\.`, 'm').test(decisions), `DECISIONS.md still records ${id}`);
+  }
+  assert.match(decisions, /新增文件.*不改原文件/, 'DECISIONS.md keeps the "add files, do not edit upstream" principle (D1)');
+  assert.match(decisions, /KEY_RE/, 'DECISIONS.md keeps the MetaRegistry key-prefix finding (D8)');
+  assert.match(decisions, /Vibe Coding/, 'DECISIONS.md keeps the note about how this project is built');
+
+  // SESSION-PROMPT.md: the part the user actually pastes.
+  assert.match(prompts, /复制下面整段/, 'SESSION-PROMPT.md has a copy-paste bootstrap prompt');
+  assert.match(prompts, /node --test/, 'SESSION-PROMPT.md has a health-check prompt');
+
+  // and the architecture doc must point at the handover mechanism, or nobody will find it
+  assert.match(read('docs/MODS.md'), /交接\//, 'docs/MODS.md links the handover directory');
 });

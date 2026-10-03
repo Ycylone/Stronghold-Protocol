@@ -28,15 +28,17 @@
       "appliedAt": "2026-10-04",
       "file": "shared/constants.js",
       "where": "文件末尾（EMOTE_BUBBLE_MS 之后）",
-      "appliedAtLine": 228,
+      "appliedAtLine": 237,
+      "lineNote": "上游该文件 226 行；本分支 236 行；MODKIT_FORK 在第 237 行（PowerShell 行号，含末尾换行）。改动量为 git 记录的 +11 行。",
       "upstreamAnchor": "export const EMOTE_BUBBLE_MS = 3000;",
       "adds": [
-        "// ---- modkit fork ----",
+        "// ---- modkit fork ----（后接一条 8 行的 JSDoc 注释块，完整文本见 git diff）",
         "export const MODKIT_FORK = true;"
       ],
       "reason": "MOD 加载器需要一个自身标识；同时作为「与上游的差异锚点」，方便合并时定位。",
-      "reapply": "找到 `export const EMOTE_BUBBLE_MS` 那一行，在其后追加上述注释块与 export（完整文本见本次提交的 diff）。",
-      "conflictRisk": "低。上游极少改动文件末尾；即便改动，也只需在合并后重新追加这几行。"
+      "reapply": "找到 `export const EMOTE_BUBBLE_MS` 那一行，在其后追加注释块与 `export const MODKIT_FORK = true;`。准确文本用 `git diff 8b10625 modkit -- shared/constants.js` 取。",
+      "conflictRisk": "低。上游极少改动文件末尾；即便改动，也只需在合并后重新追加这几行。",
+      "verifiedBy": "node mods/tools/check-upstream-diff.mjs（会实测该文件是否仍是唯一被改动的上游文件）"
     }
   ],
 
@@ -68,7 +70,8 @@
       "upstreamAnchor": "构造 Battle 并传 opts 的位置（搜索 `extraContent`）",
       "purpose": "把 MOD 的内容模块与干员技能表传给每一场 Battle。",
       "preferredApproach": "在 Battle 的 opts 里追加 `extraContent: modExtraContent()` 与 `kits: modKits()`（两者都是已有参数，引擎无需改动）。",
-      "note": "Battle.js 第 172 行已经是 `extra: opts.extraContent`，所以这一侧零改动。"
+      "note": "Battle.js 第 172 行已经是 `extra: opts.extraContent`，所以这一侧零改动。",
+      "conflictRisk": "⚠️ 高，且此前被低估。实测：`bopts` 是 Match.js 第 2850–2867 行的一个内联多行对象字面量，而 Match.js 有 3000+ 行、是上游最活跃的文件之一。这里属于高冲突位置，与「低冲突」目标相悖 —— P1 开工前应重新权衡是否值得，或寻找替代注入点（见 交接/PROGRESS.md §5.2 Q2）。"
     }
   ],
 

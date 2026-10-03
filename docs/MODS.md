@@ -58,10 +58,29 @@ E:\new\Stronghold-Protocol - 副本\   ← git 仓库根（这个文件夹本身
 │       └── ...                    ← 该 MOD 的数据与代码
 ├── docs/MODS.md                   ← 本文件
 ├── test/modkit-compat.test.js     ← 兼容性守卫（上游接口漂移会在此报错）
+├── 交接/                          ← ★ 跨对话的状态传递（见 §3.1）
+│   ├── PROGRESS.md                ← 当前进度（唯一权威状态）
+│   ├── DECISIONS.md               ← 已定决策 + 技术陷阱
+│   └── SESSION-PROMPT.md          ← 开新对话时复制粘贴的提示词
 └── （其余为上游原样代码）
 ```
 
-**注意**：`mods/` 是**新增目录**，所以它永远不会和上游冲突。这是本方案最值钱的性质。
+**注意**：`mods/` 和 `交接/` 都是**新增目录**，所以它们永远不会和上游冲突。这是本方案最值钱的性质。
+
+### 3.1 关于 `交接/` —— 上下文会溢出，所以记忆必须落盘
+
+本项目由一个**不手写代码的用户**借助 Vibe Coding 工具开发，单次对话的上下文装不下整个项目。
+
+所以有两条硬规矩：
+
+- **任何对话开始时**，先读 `交接/PROGRESS.md` 与 `交接/DECISIONS.md` 再接活
+- **任何阶段结束时**，先更新这两个文件再收工
+
+`PROGRESS.md` 是唯一权威的进度来源——**聊天记录不是**。
+`DECISIONS.md` 记录"为什么这么做"，防止后来的对话重复提出已被否决的方案。
+具体的复制粘贴提示词见 `交接/SESSION-PROMPT.md`。
+
+`test/modkit-compat.test.js` 会检查这些文件存在且仍含关键小节，避免它们在重构中被误删。
 
 ---
 
@@ -96,7 +115,7 @@ MOD 按"对游戏内部的侵入程度"分三层。**先做低层，高层等上
 | **钩子总线** | `server/sim/Battle.js` 的 `battle.on/off` | 战斗事件（20 个事件） | `DESIGN.md` §5.4 明写这是"内容接入的唯一方式"，官方内容全走它 |
 | **`extraContent`** | `Battle.js` 第 172 行 `extra: opts.extraContent` | 往每场战斗注入内容模块 | 引擎已实现的参数，**零改动可用** |
 | **`opts.kits`** | `server/sim/content/index.js` | 覆盖/新增干员技能表 | 代码里已写成"优先于官方技能表" |
-| **`MetaRegistry`** | `server/match/effectsMeta.js` | 休整期效果（盟约/装备/策略/机变） | `docs/META.md` 有完整文档；key 正则允许任意前缀 |
+| **`MetaRegistry`** | `server/match/effectsMeta.js` | 休整期效果（盟约/装备/策略/机变） | `docs/META.md` 有完整文档；key 前缀固定为 7 个（见 §5.1） |
 | **`loadData()`** | `server/data.js` | 读取目录下所有 JSON | 天生按扩展名扫描 |
 
 ### 5.1 关于 `MetaRegistry` 的 key 命名（**已修正**）
@@ -143,7 +162,7 @@ this._safe(() => installContent(this, { mode: this.contentMode, extra: opts.extr
 
 | # | 文件 | 改动 | 为什么 |
 |---|---|---|---|
-| 1 | `shared/constants.js` | 文件末尾 +6 行：`export const MODKIT_FORK = true;` | 分支身份标识 + 合并时的差异锚点 |
+| 1 | `shared/constants.js` | 文件末尾 +11 行（含注释块）：`export const MODKIT_FORK = true;` | 分支身份标识 + 合并时的差异锚点 |
 
 **已规划、尚未应用 3 处**（P1 阶段）：
 
