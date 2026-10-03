@@ -113,14 +113,20 @@ git commit -m "新增 MOD 加载器：扫描 mods 目录并合并数据"
 ### 3.3 备份到 GitHub（推送）
 
 ```powershell
-git push origin modkit
+git push
 ```
 
-意思是："把 `modkit` 分支推送到 `origin`（你的 fork）"。
+就这一个词。因为 `modkit` 已经和 `origin/modkit` 建立了跟踪关系，git 知道该推到哪。
 
-**第一次推送时**，会弹出浏览器让你登录 GitHub——这是 Git Credential Manager 在干活，点一下授权就好，以后不用再登。
+**第一次推送时**会弹出浏览器让你登录 GitHub——这是 Git Credential Manager 在干活，点一下授权就好，以后不用再登。
 
 看到 `new branch` 之类的提示是正常的。
+
+> 如果 `git push` 报错说不知道该推哪里（比如你新建了别的分支），用完整写法：
+> ```powershell
+> git push -u origin 分支名
+> ```
+> `-u` 是"记住这个对应关系"，加一次以后就能只写 `git push` 了。
 
 ---
 
